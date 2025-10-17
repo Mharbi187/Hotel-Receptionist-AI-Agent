@@ -1,0 +1,139 @@
+{
+  "name": "Kélibia Beach Hotel AI Receptionist",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "hotel-receptionist",
+        "responseMode": "responseNode"
+      },
+      "name": "Voice Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "kelibia-hotel-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Language detection from text input\nfunction detectLanguage(text) {\n    if (!text) return 'en';\n    \n    const frenchWords = ['bonjour', 'salut', 'merci', 'réservation', 'chambre', 'hotel'];\n    const arabicWords = ['مرحبا', 'السلام', 'شكرا', 'حجز', 'غرفة', 'فندق'];\n    const italianWords = ['ciao', 'buongiorno', 'grazie', 'prenotazione', 'camera', 'albergo'];\n    \n    const lowerText = text.toLowerCase();\n    \n    if (frenchWords.some(word => lowerText.includes(word))) return 'fr';\n    if (arabicWords.some(word => lowerText.includes(word))) return 'ar';\n    if (italianWords.some(word => lowerText.includes(word))) return 'it';\n    return 'en';\n}\n\nconst userText = $input.body.text || '';\nconst detectedLanguage = detectLanguage(userText);\n\nreturn {\n  userText: userText,\n  detectedLanguage: detectedLanguage,\n  sessionId: $input.body.sessionId || Date.now().toString(),\n  timestamp: $input.body.timestamp || new Date().toISOString()\n};"
+      },
+      "name": "Language Detection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const hotelInfo = {\n  name: \"Kélibia Beach Hotel & Spa\",\n  location: \"Kélibia, Tunisia - Beachfront\",\n  checkIn: \"2:00 PM\",\n  checkOut: \"12:00 PM\",\n  \n  amenities: {\n    en: \"Private beach, Luxury Spa, Infinity pool, Mediterranean restaurant, Water sports, Free WiFi\",\n    fr: \"Plage privée, Spa de luxe, Piscine à débordement, Restaurant méditerranéen, Sports nautiques, WiFi gratuit\",\n    it: \"Spiaggia privata, Spa di lusso, Piscina infinity, Ristorante mediterraneo, Sport acquatici, WiFi gratuito\",\n    ar: \"شاطئ خاص، منتجع صحي فاخر، مسبح لا متناهي، مطعم متوسطي، رياضات مائية، وايفاي مجاني\"\n  },\n  \n  roomTypes: {\n    en: [\"Standard Sea View - 600 TND/night\", \"Deluxe Suite - 850 TND/night\", \"Family Room - 1100 TND/night\", \"Presidential Suite - 1800 TND/night\"],\n    fr: [\"Chambre Standard Vue Mer - 600 TND/nuit\", \"Suite Deluxe - 850 TND/nuit\", \"Chambre Familiale - 1100 TND/nuit\", \"Suite Présidentielle - 1800 TND/nuit\"],\n    it: [\"Camera Standard Vista Mare - 600 TND/notte\", \"Suite Deluxe - 850 TND/notte\", \"Camera Familiare - 1100 TND/notte\", \"Suite Presidenziale - 1800 TND/notte\"],\n    ar: [\"غرفة ستاندرد باطلالة بحر - 600 دينار/ليلة\", \"سوييت ديلوكس - 850 دينار/ليلة\", \"غرفة عائلية - 1100 دينار/ليلة\", \"سوييت رئاسي - 1800 دينار/ليلة\"]\n  }\n};\n\nconst systemPrompts = {\n  en: `You are Sophia, the warm and professional AI receptionist at Kélibia Beach Hotel & Spa in Tunisia. \n  \nHOTEL INFORMATION:\n- Check-in: ${hotelInfo.checkIn}, Check-out: ${hotelInfo.checkOut}\n- Amenities: ${hotelInfo.amenities.en}\n- Room Types: ${hotelInfo.roomTypes.en.join(', ')}\n- Spa hours: 9:00 AM - 8:00 PM\n- Beach: 7:00 AM - 7:00 PM\n- Restaurant: 7:00 AM - 11:00 PM\n- Contact: +216 72 280 000\n\nRespond in a friendly, human-like manner. Use natural conversational English. Be helpful and warm. \nIf you don't know something, politely say you'll connect them with a human colleague.`,\n\n  fr: `Vous êtes Sophia, la réceptionniste AI chaleureuse et professionnelle de l'hôtel Kélibia Beach Hotel & Spa en Tunisie.\n\nINFORMATIONS SUR L'HÔTEL:\n- Check-in: ${hotelInfo.checkIn}, Check-out: ${hotelInfo.checkOut}\n- Équipements: ${hotelInfo.amenities.fr}\n- Types de chambres: ${hotelInfo.roomTypes.fr.join(', ')}\n- Spa: 9h00 - 20h00\n- Plage: 7h00 - 19h00\n- Restaurant: 7h00 - 23h00\n- Contact: +216 72 280 000\n\nRépondez de manière amicale et naturelle. Utilisez un français conversationnel. Soyez utile et chaleureuse.\nSi vous ne savez pas quelque chose, dites poliment que vous allez les mettre en contact avec un collègue humain.`,\n\n  it: `Sei Sophia, la receptionist AI calorosa e professionale del Kélibia Beach Hotel & Spa in Tunisia.\n\nINFORMAZIONI SULL'HOTEL:\n- Check-in: ${hotelInfo.checkIn}, Check-out: ${hotelInfo.checkOut}\n- Servizi: ${hotelInfo.amenities.it}\n- Tipi di camere: ${hotelInfo.roomTypes.it.join(', ')}\n- Orario Spa: 9:00 - 20:00\n- Spiaggia: 7:00 - 19:00\n- Ristorante: 7:00 - 23:00\n- Contatto: +216 72 280 000\n\nRispondi in modo amichevole e naturale. Usa un italiano conversazionale. Sii utile e calorosa.\nSe non sai qualcosa, dì educatamente che li metterai in contatto con un collega umano.`,\n\n  ar: `أنت صوفيا، موظفة الاستقبال الذكية الدافئة والمحترفة في فندق قليبية بيتش آند سبا في تونس.\n\nمعلومات الفندق:\n- تسجيل الوصول: ${hotelInfo.checkIn}، تسجيل المغادرة: ${hotelInfo.checkOut}\n- المرافق: ${hotelInfo.amenities.ar}\n- أنواع الغرف: ${hotelInfo.roomTypes.ar.join('، ')}\n- أوقات السبا: 9:00 - 20:00\n- الشاطئ: 7:00 - 19:00\n- المطعم: 7:00 - 23:00\n- الاتصال: +216 72 280 000\n\nردي بطريقة ودودة وطبيعية. استخدمي لغة عربية محادثة. كوني مفيدة ودافئة.\nإذا كنتي لا تعرفين شيئاً، قولي بأدب أنك سوف تصلينهم بزميل بشري.`\n};\n\nconst userMessage = $input.json.userText || \"Hello\";\nconst language = $input.json.detectedLanguage || 'en';\n\nconst messages = [\n  { \n    role: \"system\", \n    content: systemPrompts[language] \n  },\n  { \n    role: \"user\", \n    content: userMessage \n  }\n];\n\nreturn messages;"
+      },
+      "name": "Prepare AI Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 200
+        }
+      },
+      "name": "AI Receptionist - Sophia",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = $input.json.message.content;\nconst language = $input.json[1].detectedLanguage || 'en';\nconst sessionId = $input.json[1].sessionId;\nconst userMessage = $input.json[1].userText;\n\n// Voice configurations for different languages\nconst voiceConfigs = {\n  en: \"English Female Voice - Joanna\",\n  fr: \"French Female Voice - Céline\", \n  it: \"Italian Female Voice - Bianca\",\n  ar: \"Arabic Female Voice - Zeina\"\n};\n\nreturn {\n  sessionId: sessionId,\n  userMessage: userMessage,\n  textResponse: aiResponse,\n  voiceType: voiceConfigs[language],\n  language: language,\n  timestamp: new Date().toISOString(),\n  \n  // For API responses\n  apiResponse: {\n    status: \"success\",\n    sessionId: sessionId,\n    response: {\n      text: aiResponse,\n      language: language,\n      voice: voiceConfigs[language],\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+      },
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.apiResponse }}",
+        "options": {}
+      },
+      "name": "HTTP Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Voice Webhook": {
+      "main": [
+        [
+          {
+            "node": "Language Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Language Detection": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Message": {
+      "main": [
+        [
+          {
+            "node": "AI Receptionist - Sophia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Receptionist - Sophia": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "1",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "kelibia-hotel-ai-receptionist",
+  "tags": [],
+  "updatedAt": "2024-01-15T10:00:00.000Z",
+  "createdAt": "2024-01-15T10:00:00.000Z"
+}

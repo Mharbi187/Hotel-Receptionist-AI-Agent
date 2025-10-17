@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kélibia Hotel AI Test - YOUR WORKSPACE</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f8ff; }
+        .header { text-align: center; background: #2c5aa0; color: white; padding: 20px; border-radius: 10px 10px 0 0; }
+        .test-container { background: white; padding: 20px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .response { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #2c5aa0; }
+        .user-message { background: #e3f2fd; border-left: 4px solid #2196f3; }
+        .ai-message { background: #f1f8e9; border-left: 4px solid #4caf50; }
+        .error-message { background: #ffebee; border-left: 4px solid #f44336; }
+        pre { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        button { background: #2c5aa0; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-size: 14px; transition: background 0.3s; }
+        button:hover { background: #1e3d6f; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .quick-test-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .input-group { display: flex; gap: 10px; margin: 20px 0; }
+        input, select { padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; flex: 1; }
+        input:focus, select:focus { border-color: #2c5aa0; outline: none; }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; }
+        .status.connected { background: #e8f5e8; color: #2e7d32; border: 1px solid #4caf50; }
+        .status.error { background: #ffebee; color: #c62828; border: 1px solid #f44336; }
+        .url-display { background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏨 Kélibia Beach Hotel & Spa</h1>
+        <h2>AI Receptionist - Live Test</h2>
+        <p>Testing: mohamedharbi.app.n8n.cloud</p>
+    </div>
+
+    <div class="test-container">
+        <div class="url-display">
+            <strong>Webhook URL:</strong> https://mohamedharbi.app.n8n.cloud/webhook/hotel-receptionist
+        </div>
+
+        <div class="input-group">
+            <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="it">Italiano</option>
+                <option value="ar">العربية</option>
+            </select>
+            <input type="text" id="customMessage" placeholder="Type your message to Sophia..." value="Hello, can you tell me about your hotel?">
+            <button onclick="sendCustomMessage()">Send Message</button>
+        </div>
+
+        <div class="quick-test-buttons">
+            <button onclick="sendTestMessage('Hello, I want to book a room with sea view', 'en')">🇬🇧 Book Room</button>
+            <button onclick="sendTestMessage('Bonjour, je veux réserver une chambre vue mer', 'fr')">🇫🇷 Réserver</button>
+            <button onclick="sendTestMessage('Ciao, vorrei prenotare una camera vista mare', 'it')">🇮🇹 Prenotare</button>
+            <button onclick="sendTestMessage('مرحبا، أريد حجز غرفة مطلة على البحر', 'ar')">🇸🇦 حجز غرفة</button>
+            
+            <button onclick="sendTestMessage('What are your check-in and check-out times?', 'en')">🕐 Check-in Times</button>
+            <button onclick="sendTestMessage('What spa services do you offer?', 'en')">💆 Spa Services</button>
+            <button onclick="sendTestMessage('Do you have a restaurant?', 'en')">🍽️ Restaurant</button>
+            <button onclick="sendTestMessage('What amenities do you have?', 'en')">🏊 Amenities</button>
+        </div>
+
+        <button onclick="testConnection()" style="background: #4caf50;">🔗 Test Connection</button>
+
+        <div id="status"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // YOUR ACTUAL WEBHOOK URL
+        const n8nWebhookUrl = 'https://mohamedharbi.app.n8n.cloud/webhook-test/hotel-receptionist';
+
+
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function testConnection() {
+            showStatus('🔄 Testing connection to n8n...', 'info');
+            
+            try {
+                const response = await fetch(n8nWebhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: "Hello, connection test",
+                        language: "en"
+                    })
+                });
+
+                if (response.ok) {
+                    showStatus('✅ Connection successful! n8n workflow is responding.', 'connected');
+                } else {
+                    showStatus(`❌ Server error: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Connection failed: ${error.message}`, 'error');
+                console.error('Connection error:', error);
+            }
+        }
+
+        async function sendTestMessage(message, language) {
+            document.getElementById('languageSelect').value = language;
+            document.getElementById('customMessage').value = message;
+            await sendCustomMessage();
+        }
+
+        async function sendCustomMessage() {
+            const message = document.getElementById('customMessage').value;
+            const language = document.getElementById('languageSelect').value;
+            
+            if (!message.trim()) {
+                alert('Please enter a message');
+                return;
+            }
+
+            await sendToAI(message, language);
+        }
+
+        async function sendToAI(message, language) {
+            const resultsDiv = document.getElementById('results');
+            
+            // Add user message
+            const userMessageId = 'user-' + Date.now();
+            resultsDiv.innerHTML = `
+                <div id="${userMessageId}" class="response user-message">
+                    <strong>You (${language.toUpperCase()}):</strong> ${message}
+                    <div style="color: #666; font-size: 12px; margin-top: 5px;">
+                        🕒 ${new Date().toLocaleTimeString()} | 🔄 Sending...
+                    </div>
+                </div>
+            ` + resultsDiv.innerHTML;
+
+            try {
+                console.log('Sending to n8n:', { message, language, url: n8nWebhookUrl });
+
+                const response = await fetch(n8nWebhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: message,
+                        language: language
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                // Update user message to show sent
+                document.getElementById(userMessageId).innerHTML = `
+                    <strong>You (${language.toUpperCase()}):</strong> ${message}
+                    <div style="color: #666; font-size: 12px; margin-top: 5px;">
+                        🕒 ${new Date().toLocaleTimeString()} | ✅ Sent
+                    </div>
+                `;
+
+                // Add AI response
+                const aiResponseHtml = `
+                    <div class="response ai-message">
+                        <strong>🤖 Sophia (${data.response.language?.toUpperCase() || language.toUpperCase()}):</strong> ${data.response.text}
+                        <div style="color: #666; font-size: 12px; margin-top: 5px;">
+                            🕒 ${new Date().toLocaleTimeString()} | 🔊 ${data.response.voice || 'AI Voice'}
+                        </div>
+                        <details style="margin-top: 10px;">
+                            <summary>Technical Details</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML = aiResponseHtml + resultsDiv.innerHTML;
+                
+                showStatus('✅ Message sent and response received successfully!', 'connected');
+
+            } catch (error) {
+                console.error('Full error:', error);
+                
+                // Update user message to show error
+                document.getElementById(userMessageId).innerHTML = `
+                    <div class="response error-message">
+                        <strong>You (${language.toUpperCase()}):</strong> ${message}
+                        <div style="color: #c62828; font-size: 12px; margin-top: 5px;">
+                            🕒 ${new Date().toLocaleTimeString()} | ❌ Failed to send
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <strong>Error Details:</strong><br>
+                            ${error.message}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px;">
+                            <strong>Check:</strong>
+                            <ul>
+                                <li>n8n workflow is active</li>
+                                <li>Webhook node is configured correctly</li>
+                                <li>OpenAI credentials are set</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                
+                showStatus(`❌ Failed to send message: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test connection when page loads
+        window.addEventListener('load', function() {
+            setTimeout(testConnection, 1000);
+        });
+
+        // Allow sending with Enter key
+        document.getElementById('customMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCustomMessage();
+            }
+        });
+    </script>
+</body>
+</html>
